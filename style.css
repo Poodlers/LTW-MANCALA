@@ -157,8 +157,8 @@ input[type="password"] {
   border-color: #18ab29;
   background-color: aqua;
   aspect-ratio: 1/1;
-  object-fit: cover;
-
+  max-width: 10%;
+  max-height: 10%;
   display: flex;
   flex-direction: column;
   flex-basis: 100%;
@@ -170,5 +170,6 @@ input[type="password"] {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
+  justify-content: center;
   width: 100%;
 }
