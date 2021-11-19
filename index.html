@@ -8,13 +8,44 @@
     <section id="logo">
       <h1 id="page_title">MANCALA JEL</h1>
     </section>
+
+    <div class="instructions_parent">
+      <div class="instructions">haha lmao</div>
+    </div>
+
     <div class="container">
+      <form method="post">
+        <div class="user_container">
+          <label for="uname"><b>Username</b></label>
+          <input
+            type="text"
+            placeholder="Enter Username"
+            name="uname"
+            required
+          />
+
+          <label for="psw"><b>Password</b></label>
+          <input
+            type="password"
+            placeholder="Enter Password"
+            name="psw"
+            required
+          />
+
+          <button type="submit">Login</button>
+          <label>
+            <input type="checkbox" checked="checked" name="remember" /> Remember
+            me
+          </label>
+        </div>
+      </form>
+
       <div class="configuration">
         <h2>CONFIGURATIONS</h2>
         <div class="options">
           <button id="add_button1">+</button>
           <button id="sub_button1">-</button>
-          <p class="option_number" id="option_number1">1</p>
+          <p class="option_number" id="option_number1">0</p>
           <p class="option_description">Número de cavidades no tabuleiro</p>
         </div>
 
@@ -51,9 +82,34 @@
         </div>
       </div>
       <br />
-      <button id="mostrar_instructions_button">MOSTRAR INSTRUÇÕES</button>
+      <button id="mostrar_instructions_button" class="commands_button">
+        MOSTRAR INSTRUÇÕES
+      </button>
       <br />
-      <button id="start_game_button">START GAME</button>
+      <button id="mostrar_classifications_button" class="commands_button">
+        MOSTRAR CLASSIFICAÇÕES
+      </button>
+      <br />
+      <a href="#tabuleiro">
+        <button id="start_game_button" class="game_button">START GAME</button>
+      </a>
+      <br />
+      <button id="give_up_game_button" class="game_button">GIVE UP</button>
+
+      <div id="board">
+        <div id="board_state">
+          <p>PLAYER 1 : <span id="player_1_seeds">0</span></p>
+          <p>PLAYER 2 : <span id="player_2_seeds">0</span></p>
+        </div>
+        <div id="tabuleiro">
+          <div id="player1_seed_box" class="seed_box"></div>
+          <div id="game_cavities">
+            <div id="row1"></div>
+            <div id="row2"></div>
+          </div>
+          <div id="player2_seed_box" class="seed_box"></div>
+        </div>
+      </div>
     </div>
     <script src="script.js"></script>
   </body>

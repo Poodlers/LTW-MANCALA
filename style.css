@@ -1,13 +1,25 @@
 #logo {
   border-style: solid;
   border-width: 2px;
-  margin: auto;
-  width: 100%;
+  margin: 10px;
   height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: bisque;
+}
+
+.instructions_parent {
+  text-align: center;
+  width: 100%;
+}
+
+.instructions {
+  position: absolute;
+  background-color: red;
+  display: inline-block;
+  justify-content: center;
+  align-items: center;
 }
 
 .container {
@@ -28,8 +40,8 @@
   margin: auto;
   display: inline-block;
   align-items: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin-top: 10px;
+  margin-bottom: 10px;
   padding: 10px;
 }
 
@@ -45,7 +57,7 @@
   border-width: 2px;
 }
 
-#start_game_button {
+.game_button {
   background-color: #44c767;
   margin-top: 10px;
   width: 80%;
@@ -61,14 +73,102 @@
   text-shadow: 0px 1px 0px #2f6627;
 }
 
-#start_game_button:hover {
+#start_game_button {
   background-color: #5cbf2a;
 }
-#start_game_button:active {
+
+#start_game_button:hover {
+  background-color: #2f6627;
+}
+
+#give_up_game_button {
+  background-color: red;
+  border: 1px solid red;
+  text-shadow: 0px 1px 0px #8c2d19;
+}
+#give_up_game_button:hover {
+  background-color: #8c2d19;
+}
+.game_button:active {
   position: relative;
   top: 1px;
 }
 
-#mostrar_instructions_button {
+.commands_button {
   margin-top: 10px;
+}
+
+form {
+  border: 3px solid #f1f1f1;
+  width: 50%;
+  margin: auto;
+  padding: 10px;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#board {
+  border: 3px solid #f1f1f1;
+  margin: 10px;
+}
+
+#board_state {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-right: 20px;
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+#tabuleiro {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.seed_box {
+  border: 3px solid #5cbf2a;
+  width: 10%;
+}
+
+#game_cavities {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  align-content: space-between;
+  width: 70%;
+  border: 3px solid #5cbf2a;
+}
+
+.cavity {
+  border-radius: 50%;
+  border-width: 3px;
+  border-color: #18ab29;
+  background-color: aqua;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+
+  display: flex;
+  flex-direction: column;
+  flex-basis: 100%;
+  flex: 1;
+}
+
+#row1,
+#row2 {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
 }
