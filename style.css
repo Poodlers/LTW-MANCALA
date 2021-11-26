@@ -9,17 +9,46 @@
   background-color: bisque;
 }
 
-.instructions_parent {
+#instructions_parent {
   text-align: center;
   width: 100%;
 }
 
-.instructions {
+#instructions {
   position: absolute;
   background-color: red;
   display: inline-block;
-  justify-content: center;
-  align-items: center;
+  left: 50%;
+  top: auto;
+  margin-left: -35%;
+  width: 70%;
+  opacity: 0%;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0%;
+  }
+  100% {
+    opacity: 100%;
+  }
+}
+
+.elementToFadeIn {
+  animation: fadeIn 1s linear forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 100%;
+  }
+  100% {
+    opacity: 0%;
+  }
+}
+
+.elementToFadeOut {
+  animation: fadeOut 1s linear forwards;
 }
 
 .container {
@@ -118,6 +147,7 @@ input[type="password"] {
 #board {
   border: 3px solid #f1f1f1;
   margin: 10px;
+  display: none;
 }
 
 #board_state {
@@ -160,9 +190,12 @@ input[type="password"] {
   max-width: 10%;
   max-height: 10%;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex-basis: 100%;
   flex: 1;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 #row1,
@@ -172,4 +205,23 @@ input[type="password"] {
   flex-wrap: wrap;
   justify-content: center;
   width: 100%;
+  padding: 5px;
+}
+
+.seed {
+  border-radius: 50%;
+  border-width: 3px;
+  border-color: #18ab29;
+  background-color: black;
+  aspect-ratio: 1/1;
+  max-width: 10%;
+  max-height: 10%;
+  display: flex;
+  flex-direction: row;
+  flex-basis: 100%;
+  flex: 1;
+}
+
+button {
+  background-color: grey;
 }

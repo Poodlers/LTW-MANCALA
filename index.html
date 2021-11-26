@@ -6,12 +6,15 @@
 
   <body>
     <section id="logo">
-      <h1 id="page_title">MANCALA JEL</h1>
+      <h1 id="page_title">MANCALA</h1>
     </section>
 
-    <div class="instructions_parent">
-      <div class="instructions">haha lmao</div>
-    </div>
+    <div id="instructions_parent">
+      <div id="instructions">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus eget consectetur arcu. Ut congue est vitae massa accumsan semper. Nullam eu est arcu. Nullam id eros nec justo laoreet volutpat pulvinar sit amet est. Sed sollicitudin imperdiet odio, non lobortis turpis vulputate eget. Aliquam ornare venenatis diam, non lobortis magna. Donec sodales sem nulla, at accumsan lorem molestie sit amet. Nulla consequat nisl non elit euismod, eu volutpat ante efficitur. Etiam pretium nisl sapien, in tristique nunc lobortis vitae. Vivamus sed tellus convallis, tincidunt velit in, porta sapien. Vestibulum placerat, metus in faucibus interdum, magna neque tristique felis, porttitor lobortis lectus lacus non nibh. Integer in mauris sit amet dolor viverra tristique eu eget justo. Donec ac blandit libero, quis placerat enim.
+
+        Vivamus euismod mauris erat, eget ultrices risus faucibus ac. In pulvinar massa ornare urna accumsan, quis ornare ligula laoreet. Ut non ex pellentesque, lacinia diam ut, consectetur leo. Ut a tellus quis risus varius pretium et a eros. Donec sem mi, malesuada eget interdum in, aliquam et magna. Ut malesuada volutpat sem, rutrum lobortis enim tempor vitae. Praesent gravida rutrum nulla, vel ornare lacus porta id. In ultrices dictum venenatis. Fusce nibh dolor, facilisis vel cursus ac, cursus eu magna. Vestibulum malesuada efficitur arcu, at maximus quam. Integer id facilisis diam, in ultricies magna. Vivamus eget accumsan lorem, sit amet facilisis tellus. Phasellus quis orci volutpat, tincidunt urna et, semper metus. Curabitur faucibus tortor nec velit semper facilisis.
+        
+        </div>
 
     <div class="container">
       <form method="post">
@@ -44,15 +47,15 @@
         <h2>CONFIGURATIONS</h2>
         <div class="options">
           <button id="add_button1">+</button>
-          <button id="sub_button1">-</button>
-          <p class="option_number" id="option_number1">0</p>
+          <button id="sub_button1" disabled>-</button>
+          <p class="option_number" id="option_number1">2</p>
           <p class="option_description">Número de cavidades no tabuleiro</p>
         </div>
 
         <div class="options">
           <button id="add_button2">+</button>
-          <button id="sub_button2">-</button>
-          <p class="option_number" id="option_number2">0</p>
+          <button id="sub_button2" disabled>-</button>
+          <p class="option_number" id="option_number2">2</p>
           <p class="option_description">
             Número inicial de sementes por cavidade
           </p>
@@ -61,12 +64,12 @@
         <div class="options">
           <button>+</button>
           <button>-</button>
-          <p class="option_number">1</p>
+          <p class="option_number" disabled>1</p>
           <p class="option_description">Nível da inteligência artificial</p>
         </div>
         <div class="options">
-          <button>VS PLAYER</button>
-          <button>VS CPU</button>
+          <button id="options_vs_player">VS PLAYER</button>
+          <button id="options_vs_cpu">VS CPU</button>
 
           <p class="option_description">
             Jogar contra o computador ou outro jogador
@@ -74,15 +77,15 @@
         </div>
 
         <div class="options">
-          <button>I WANT TO GO FIRST</button>
-          <button>LET CPU START</button>
+          <button id="options_go_first">I WANT TO GO FIRST</button>
+          <button id= "options_let_cpu_start">LET CPU START</button>
           <p class="option_description">
             Iniciar o jogo ou dar a vez ao computador
           </p>
         </div>
       </div>
       <br />
-      <button id="mostrar_instructions_button" class="commands_button">
+      <button id="mostrar_instructions_button" class="instructions_button">
         MOSTRAR INSTRUÇÕES
       </button>
       <br />
