@@ -1026,11 +1026,14 @@ game_start_button.addEventListener("click", function(){
         Mancala.resetGameState();
         Mancala.createBoard();
         Mancala.buildBoard();
-        Mancala.displayPlayersNames();
         if(Mancala.isCPUStart()){
             Mancala.switchCurrentPlayer();
+            Mancala.displayPlayersNames();
             Mancala.makeCPUMove();
+        }else{
+            Mancala.displayPlayersNames();
         }
+        
     }
 
 })
