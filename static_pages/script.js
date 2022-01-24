@@ -691,7 +691,7 @@ class MancalaGame{
     }
 
     async makeCPUMove(){
-        this.current_player = this.player2;
+
         while(this.current_player.getType() == PlayerType.CPU){
             console.log("CPU's move now!");
             let cavity_for_CPU_play = await this.getCPUMove(this.board);
@@ -1028,6 +1028,7 @@ game_start_button.addEventListener("click", function(){
         Mancala.buildBoard();
         Mancala.displayPlayersNames();
         if(Mancala.isCPUStart()){
+            Mancala.switchCurrentPlayer();
             Mancala.makeCPUMove();
         }
     }
