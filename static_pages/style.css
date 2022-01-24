@@ -24,9 +24,9 @@ body {
 }
 
 #logout_button {
-
+  width: 100px;
   position: relative;
-  z-index: 50;
+  z-index: 50000000;
 }
 
 #logged_in_info {
