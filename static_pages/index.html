@@ -1,0 +1,153 @@
+<html>
+  <head>
+    <title>MANCALA JEL</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <section id="logo">
+      <h1 id="page_title">MANCALA</h1>
+    </section>
+
+    <div id="instructions_parent">
+      <div id="instructions">
+        <h2>HOW TO PLAY MANCALA</h2>
+        <p>Jogadores semeiam as suas sementes alternadamente </p> 
+        <p> Na sua vez semeiam a partir de uma das suas cavidades</p>
+        <p>  Consoante a situação da última semente semeada, podem voltar a jogar ou ficar com algumas sementes do adversário</p>
+        <p>Termina quando um dos jogadores fica sem sementes</p>
+      </div>
+
+      <div id="logged_in_info">
+        <p>Welcome, <span id="logged_in_name"></span></p>
+        <br />
+        <br />
+        <button id="logout_button">LOG OUT</button>
+
+        <br />
+        <br />
+      </div>
+
+      <div id="container">
+        <br />
+        <label for="uname"><b>Username</b></label>
+        <input
+          type="text"
+          placeholder="Enter Username"
+          name="uname"
+          id="username_field"
+        />
+
+        <label for="psw"><b>Password</b></label>
+        <input
+          id="password_field"
+          type="password"
+          placeholder="Enter Password"
+          name="psw"
+        />
+
+        <label> <input type="checkbox" name="remember" /> Remember me </label>
+        <br />
+        <button id="login_button">Login</button>
+        <br />
+        <br />
+        <button id="register_button">Register</button>
+      </div>
+
+      <div id="demo"></div>
+
+      <div class="configuration">
+        <h2>CONFIGURATIONS</h2>
+        <div class="options">
+          <button id="add_button1">+</button>
+          <button id="sub_button1" disabled>-</button>
+          <p class="option_number" id="option_number1">2</p>
+          <p class="option_description">
+            Numero de cavidades no tabuleiro por lado
+          </p>
+        </div>
+
+        <div class="options">
+          <button id="add_button2">+</button>
+          <button id="sub_button2" disabled>-</button>
+          <p class="option_number" id="option_number2">2</p>
+          <p class="option_description">
+            Numero inicial de sementes por cavidade
+          </p>
+        </div>
+
+        <div class="options">
+          <button id="add_button3">+</button>
+          <button id="sub_button3" disabled>-</button>
+          <p class="option_number" id="option_number3">1</p>
+          <p class="option_description">Nivel da inteligencia artificial</p>
+        </div>
+        <div class="options">
+          <button id="options_vs_player_multiplayer">VS PLAYER ONLINE</button>
+          <button id="options_vs_player">VS PLAYER LOCAL</button>
+          <button id="options_vs_cpu">VS CPU</button>
+
+          <p class="option_description">
+            Jogar contra o computador ou outro jogador
+          </p>
+        </div>
+
+        <div class="options">
+          <button id="options_go_first">I WANT TO GO FIRST</button>
+          <button id="options_let_cpu_start">LET CPU START</button>
+          <p class="option_description">
+            Iniciar o jogo ou dar a vez ao computador
+          </p>
+        </div>
+      </div>
+      <br />
+      <button id="mostrar_instructions_button" class="instructions_button">
+        SHOW INSTRUCTIONS
+      </button>
+      <br />
+      <br />
+      <button
+        id="mostrar_classifications_button_server"
+        class="commands_button"
+      >
+        SHOW RANKING
+      </button>
+      <br />
+
+      <div id="classifications">
+        
+      </div>
+
+      <div id="queue_display"></div>
+      <a href="#tabuleiro">
+        <button id="start_game_button" class="game_button">START GAME</button>
+      </a>
+      <br />
+      <button id="give_up_game_button" class="game_button">GIVE UP</button>
+
+      <div id="board">
+        <div id="board_state">
+          <p>
+            <span id="player_2_name">PLAYER 2: </span>
+            <span id="player_2_seeds">0</span>
+          </p>
+          <p>CURRENTLY PLAYING: <span id="current_player"></span></p>
+          <p>
+            <span id="player_1_name">PLAYER 1: </span>
+            <span id="player_1_seeds">0</span>
+          </p>
+        </div>
+        <div id="tabuleiro">
+          <div class="player_2_seed_box"></div>
+          <div id="game_cavities">
+            <div id="row1"></div>
+            <div id="row2"></div>
+          </div>
+          <div class="player_1_seed_box"></div>
+        </div>
+        <div id="winner_display"></div>
+      </div>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>
