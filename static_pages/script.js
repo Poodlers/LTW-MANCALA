@@ -60,6 +60,15 @@ class MancalaGame{
         this.min_max_depth = 1;
         this.online_hash = undefined;
         this.updateSource = undefined;
+        this.CPUStart = false;
+    }
+
+    setCPUStart(CPUStart){
+        this.CPUStart = CPUStart;
+    }
+
+    isCPUStart(){
+        return this.CPUStart;
     }
 
     getDepth(){
@@ -312,8 +321,8 @@ class MancalaGame{
                 const data = JSON.parse(xhttp_leave.responseText);
                 console.log(data);
                 if(this.status == 200) {
-                    // logIn is successful  
-                    console.log("LogIn success")
+                      
+                    console.log("Leave success")
                 }
             }
         
@@ -681,6 +690,16 @@ class MancalaGame{
     
     }
 
+    async makeCPUMove(){
+        this.current_player = this.player2;
+        while(this.current_player.getType() == PlayerType.CPU){
+            console.log("CPU's move now!");
+            let cavity_for_CPU_play = await this.getCPUMove(this.board);
+            console.log("CPU MOVE: ", cavity_for_CPU_play);
+            this.sow(cavity_for_CPU_play, true);
+        }
+    }
+
     switchCurrentPlayer(){
         if(this.current_player.getName() == this.player1.getName()){
             this.current_player = this.player2;
@@ -794,9 +813,7 @@ class MancalaGame{
         
     }
 
-    play(){
-        
-    }
+    
 }
 
 
@@ -844,13 +861,13 @@ vs_human.addEventListener("click", function(){
 })
 
 cpu_start.addEventListener("click", function(){
-    Mancala.switchCurrentPlayer();
+    Mancala.setCPUStart(true);
     cpu_start.style.backgroundColor = "green";
     human_start.style.backgroundColor = "grey";
 })
 
 human_start.addEventListener("click", function(){
-    Mancala.switchCurrentPlayer();
+    Mancala.setCPUStart(false);
     cpu_start.style.backgroundColor = "grey";
     human_start.style.backgroundColor = "green";
 })
@@ -1005,10 +1022,14 @@ game_start_button.addEventListener("click", function(){
         xhttp_join.send(JSON.stringify(request_body));
     }
     else{
+    
         Mancala.resetGameState();
         Mancala.createBoard();
         Mancala.buildBoard();
         Mancala.displayPlayersNames();
+        if(Mancala.isCPUStart()){
+            Mancala.makeCPUMove();
+        }
     }
 
 })
