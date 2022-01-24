@@ -24,7 +24,6 @@ const headers = {
 
 http.createServer((request,response) => {
 
-    
     switch(request.method) {
     case 'GET':
         if (request.headers.accept && request.headers.accept == 'text/event-stream'){
@@ -282,6 +281,8 @@ function sendSSE(request, response){
     const args = parseQuery(queryString);
     const nick = args.nick;
     const game_name = args.game;
+    let board_prev = [];
+    let timeout = 0;
     // find this ongoing game in ongoinggames.json
     const updateStream = setInterval(() => {
         const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
@@ -296,6 +297,23 @@ function sendSSE(request, response){
            
             if(game.board != undefined){
                 let game_board = game.board;
+                //game_board has not changed so increment the time
+                if(game_board == board_prev){
+                    console.log("timeout curr: ", timeout);
+                    timeout = timeout + 1;
+                }else{ //reset timeout
+                    board_prev = game_board;
+                    timeout = 0;
+                }
+                //two minutes have passed
+                if(timeout == 120){
+                    console.log("timeout");
+                    //set our winner
+                    game.winner = (game.turn == game.player1 ? game.player2 : game.player1);
+
+
+                }
+
                 //set up our MancalaHelper
                 let Mancala_Assist = new MancalaHelper();
                 Mancala_Assist.setUp(game_board);

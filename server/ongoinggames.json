@@ -1,1 +1,1 @@
-{"ongoing_games":[{"id":{"player1":"n","player2":"n2","board":[2,2,2,2,2],"pit":null,"winner":0}}]}
+{"ongoing_games":[{"id":{"player1":"n","player2":"n2","board":[2,2,2,2,2],"pit":null,"winner":0, "turn": "n"}}]}

@@ -457,6 +457,8 @@ class MancalaGame{
 
     displayWinner(){
         let winner_display = document.getElementById("winner_display");
+        let give_up_game_button = document.getElementById("give_up_game_button");
+        give_up_button.innerHTML = "END GAME";
         let winner_text = document.createElement("p");
         if(this.winner != undefined){
              winner_text.innerHTML = "Winner is: " + this.winner.getName() + " with a total of " + this.winner.getScore();
@@ -818,8 +820,10 @@ let multiplayer_button = document.getElementById("options_vs_player_multiplayer"
 let register_button = document.getElementById("register_button");
 let server_rankings_button = document.getElementById("mostrar_classifications_button_server");
 let logout_button = document.getElementById("logout_button");
-let backend = 'http://localhost:8007';
+let backend = 'http://twserver.alunos.dcc.fc.up.pt:9043';
+
 //http://twserver.alunos.dcc.fc.up.pt:8008
+//http://twserver.alunos.dcc.fc.up.pt:9043
 
 
 vs_cpu.addEventListener("click", function(){
@@ -840,11 +844,13 @@ vs_human.addEventListener("click", function(){
 })
 
 cpu_start.addEventListener("click", function(){
+    Mancala.switchCurrentPlayer();
     cpu_start.style.backgroundColor = "green";
     human_start.style.backgroundColor = "grey";
 })
 
 human_start.addEventListener("click", function(){
+    Mancala.switchCurrentPlayer();
     cpu_start.style.backgroundColor = "grey";
     human_start.style.backgroundColor = "green";
 })
@@ -1008,6 +1014,7 @@ game_start_button.addEventListener("click", function(){
 })
 
 give_up_button.addEventListener("click", function(){
+    give_up_button.innerHTML = "GIVE UP";
     let board = document.getElementById("board");
     let winner_display = document.getElementById("winner_display");
     winner_display.innerHTML = "";
@@ -1033,6 +1040,8 @@ let logged_in = false;
 logout_button.addEventListener("click", function(){
     username = '';
     password = '';
+    let queue_display = document.getElementById("queue_display");
+    queue_display.innerHTML = '';
     let password_field = document.getElementById("password_field");
     let nickname_field = document.getElementById("username_field");
     nickname_field.value = '';
@@ -1194,12 +1203,23 @@ register_button.addEventListener("click", function(){
     xhttp_register.send(JSON.stringify(request_body));
 })
 
+let rankings_display = false;
 
 server_rankings_button.addEventListener("click", function(){
-    
+    let classifications = document.getElementById("classifications");
+    classifications.innerHTML = "";
+
+    rankings_display = !rankings_display;
+    if(!rankings_display){
+        classifications.style.display = "none";
+        return;
+    }else{
+        classifications.style.display = "block";
+    }
+
     //rankings
     let xhttp_ranking = new XMLHttpRequest();
-    
+
     xhttp_ranking.open("POST", backend + '/ranking', true);
     xhttp_ranking.onreadystatechange = function() {
         console.log(xhttp_ranking.responseText);
@@ -1208,9 +1228,6 @@ server_rankings_button.addEventListener("click", function(){
         
         const data = JSON.parse(xhttp_ranking.responseText);
         console.log(data);
-        let classifications = document.getElementById("classifications");
-        classifications.style.display = "block";
-        classifications.innerHTML = "";
         let new_div = document.createElement("div");
         new_div.setAttribute("id", "classification_term");
         let son_div1 = document.createElement("div");
