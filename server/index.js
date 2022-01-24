@@ -42,7 +42,7 @@ http.createServer((request,response) => {
         response.end();    
     }
 
-}).listen(conf.port, conf.address);
+}).listen(conf.port);
 
 function parseQuery(queryString) {
     var query = {};
