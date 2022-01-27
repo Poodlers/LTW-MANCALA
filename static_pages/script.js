@@ -869,7 +869,7 @@ let register_button = document.getElementById("register_button");
 let server_rankings_button = document.getElementById("mostrar_classifications_button_server");
 let logout_button = document.getElementById("logout_button");
 let local_rankings = document.getElementById("mostrar_classifications_button_local");
-let backend = 'http://localhost:9043';
+let backend = 'http://twserver.alunos.dcc.fc.up.pt:9043';
 
 //http://localhost:9043'
 //http://twserver.alunos.dcc.fc.up.pt:8008
