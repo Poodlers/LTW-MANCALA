@@ -1,4 +1,4 @@
-module.exports.documentRoot = '/mnt/c/Users/radio/OneDrive/Ambiente de Trabalho/PwoGwammingUwU/LTW-GAMING/ltw-mandala/static_pages';
+module.exports.documentRoot = '/net/areas/homes/up201906159/public_html/static_pages';
 ///mnt/c/Users/radio/OneDrive/Ambiente de Trabalho/PwoGwammingUwU/LTW-GAMING/ltw-mandala/static_pages
 ///net/areas/homes/up201906159/public_html/static_pages
 module.exports.defaultIndex = 'index.html';
