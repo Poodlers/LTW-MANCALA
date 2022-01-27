@@ -53,7 +53,6 @@ class MancalaGame{
         this.board = [];
         this.player2_storage = this.num_of_cavities + 1;
         this.player1_storage = 0;
-        this.rankings = [];
         this.winner = undefined;
         this.game_end = false;
         this.isonline = false;
@@ -321,7 +320,8 @@ class MancalaGame{
                 const data = JSON.parse(xhttp_leave.responseText);
                 console.log(data);
                 if(this.status == 200) {
-                      
+                    let queue_display = document.getElementById("queue_display");
+                    queue_display.innerHTML = "Gave up on this game!";
                     console.log("Leave success")
                 }
             }
@@ -341,36 +341,39 @@ class MancalaGame{
     }
 
     checkGameEndOnline(winner, final_board){
-        let sides = final_board.sides;
-        let player1_side = sides[this.player1.getName()];
-        let player2_side = sides[this.player2.getName()];
-        let player1_store = player1_side["store"];
-        let player2_store = player2_side["store"];
-        let player1_pits = player1_side["pits"];
-        let player2_pits = player2_side["pits"];
-        let final_player1_score = 0;
-        let final_player2_score = 0;
+        if(final_board != undefined){
+            let sides = final_board.sides;
+            let player1_side = sides[this.player1.getName()];
+            let player2_side = sides[this.player2.getName()];
+            let player1_store = player1_side["store"];
+            let player2_store = player2_side["store"];
+            let player1_pits = player1_side["pits"];
+            let player2_pits = player2_side["pits"];
+            let final_player1_score = 0;
+            let final_player2_score = 0;
 
-        for(let i = 0; i < player1_pits.length; i++){
-            final_player1_score+= player1_pits[i];
-        }
-        final_player1_score = final_player1_score + player1_store;
+            for(let i = 0; i < player1_pits.length; i++){
+                final_player1_score+= player1_pits[i];
+            }
+            final_player1_score = final_player1_score + player1_store;
 
-        for(let i = 0; i < player2_pits.length; i++){
-            final_player2_score+= player2_pits[i];
-        }
-        final_player2_score = final_player2_score + player2_store;
+            for(let i = 0; i < player2_pits.length; i++){
+                final_player2_score+= player2_pits[i];
+            }
+            final_player2_score = final_player2_score + player2_store;
 
-        //prepare the board for the final display
-        for(let i = 0; i < this.board.length; i++){
-            this.board[i] = 0;
+            //prepare the board for the final display
+            for(let i = 0; i < this.board.length; i++){
+                this.board[i] = 0;
+            }
+            this.board[this.player1_storage] = final_player1_score;
+            this.board[this.player2_storage] = final_player2_score;
+            
+            
+            this.player1.setScore(final_player1_score);
+            this.player2.setScore(final_player2_score);
         }
-        this.board[this.player1_storage] = final_player1_score;
-        this.board[this.player2_storage] = final_player2_score;
         
-        
-        this.player1.setScore(final_player1_score);
-        this.player2.setScore(final_player2_score);
         console.log(winner);
         if(winner == null){
             this.winner = undefined;
@@ -470,7 +473,12 @@ class MancalaGame{
         give_up_button.innerHTML = "END GAME";
         let winner_text = document.createElement("p");
         if(this.winner != undefined){
-             winner_text.innerHTML = "Winner is: " + this.winner.getName() + " with a total of " + this.winner.getScore();
+            if(this.winner.getScore() == 0){
+                winner_text.innerHTML = "Winner is: " + this.winner.getName() + "due to the other party giving up!";
+            }else{
+                winner_text.innerHTML = "Winner is: " + this.winner.getName() + " with a total of " + this.winner.getScore();
+            }
+             
         }
         else{
             winner_text.innerHTML = "IT'S A TIE YUPIEEEEEE";
@@ -479,34 +487,57 @@ class MancalaGame{
         winner_display.appendChild(winner_text);
     }
 
-    addToRankingTable(display){
-        if(this.winner == undefined){
-            this.rankings.push({name : this.player1.getName(), score: this.player1.getScore()});
-            this.rankings.push({name : this.player2.getName(), score: this.player2.getScore()});
-        }else{
-            this.rankings.push({name : this.winner.getName(), score: this.winner.getScore()});
+    addToRankingTable(){
+        let rankingsString = window.localStorage.getItem("rankings");
+        let ranking_list = [];
+        let player1_games = 0;
+        let player1_victories = 0;
+        let player2_victories = 0;
+        let player2_games = 0;
+        let loser = (this.winner == this.player1 ? this.player2 : this.player1);
+        if(rankingsString != null){
+            let rankingObj = JSON.parse(rankingsString);
+            ranking_list = rankingObj.rankings;
+            let player1_entry = ranking_list.find(element=> element.name == this.player1.getName());
+            let player2_entry = ranking_list.find(element=> element.name == this.player2.getName());
+            if(player1_entry != undefined){
+                player1_games = player1_entry.games;
+                player1_victories = player1_entry.victories;
+            }
+            if(player2_entry != undefined){
+                player2_victories = player2_entry.victories;
+                player2_games = player2_entry.games;
+            }            
+
+            ranking_list = ranking_list.filter(element => element.name != this.player1.getName() && element.name != this.player2.getName());
+
         }
-        this.rankings.sort(function(a,b){
-            if (a.score > b.score) {
+        
+
+        if(this.winner == undefined){
+            ranking_list.push({name : this.player1.getName(), games: 1 + player1_games, victories: 0 + player1_victories });
+            ranking_list.push({name : this.player2.getName(), games: 1 + player2_games, victories: 0 + player2_victories});
+        }else{
+            ranking_list.push({name : this.winner.getName(), games: 1 + (this.winner == this.player1 ? player1_games : player2_games), victories: 1 + (this.winner == this.player1 ? player1_victories : player2_victories) });
+            ranking_list.push({name : loser.getName(), games: 1 + (loser == this.player1 ? player1_games : player2_games), victories: 1 + (loser == this.player1 ? player1_victories : player2_victories)});
+        }
+
+        ranking_list.sort(function(a,b){
+            if (a.victories > b.victories) {
                 return 1;
               }
-              if (a.score < b.score) {
+              if (a.victories < b.victories) {
                 return -1;
               }
               // a must be equal to b
               return 0;
         });
 
-        if(display){
-            //update the rankings table in html
-            let classifications = document.getElementById("classifications");
-            classifications.innerHTML = "";
-            for(let i = 0; i < this.rankings.length; i++){
-                let new_div = document.createElement("div");
-                new_div.innerHTML = (i + 1).toString() + ". " + this.rankings[i].name;
-                classifications.appendChild(new_div);
-            }
-        }
+        const objToStore = {rankings: ranking_list};
+        console.log(objToStore);
+        rankingsString = JSON.stringify(objToStore);
+        window.localStorage.setItem("rankings", rankingsString);
+        
     }
     async getCPUMove(board){
         //make local copy of board
@@ -518,7 +549,7 @@ class MancalaGame{
         let score, move;
         //returns (bestScore, moveForBestScore)
         //isMax is always true cuz we only want the best move for our player2 (CPU)
-        await sleep(3000);
+        await sleep(1000);
         [score, move] = this.findMoveHelper(local_board,this.min_max_depth, true );
         return move;
     }
@@ -663,7 +694,7 @@ class MancalaGame{
                 //display end of game shit and update tabelas de classificacao idk
                 this.game_end = true;
                 console.log("Game ended!");
-                this.addToRankingTable(display);
+                this.addToRankingTable();
                 if(display){
                     this.displayWinner();
                 }
@@ -837,8 +868,10 @@ let multiplayer_button = document.getElementById("options_vs_player_multiplayer"
 let register_button = document.getElementById("register_button");
 let server_rankings_button = document.getElementById("mostrar_classifications_button_server");
 let logout_button = document.getElementById("logout_button");
-let backend = 'http://twserver.alunos.dcc.fc.up.pt:9043';
+let local_rankings = document.getElementById("mostrar_classifications_button_local");
+let backend = 'http://localhost:9043';
 
+//http://localhost:9043'
 //http://twserver.alunos.dcc.fc.up.pt:8008
 //http://twserver.alunos.dcc.fc.up.pt:9043
 
@@ -1229,9 +1262,76 @@ register_button.addEventListener("click", function(){
 })
 
 let rankings_display = false;
+let rankings_local_display = false;
+
+mostrar_classifications_button_local.addEventListener("click", function(){
+
+    let classifications = document.getElementById("classifications_local");
+    classifications.innerHTML = "";
+
+    rankings_local_display = !rankings_local_display;
+    if(!rankings_local_display){
+        classifications.style.display = "none";
+        return;
+    }else{
+        classifications.style.display = "block";
+    }
+
+    let rankingsString = window.localStorage.getItem("rankings");
+    let rankingsList = [];
+    if(rankingsString != null){
+        rankingsList = JSON.parse(rankingsString).rankings;
+
+    }
+
+    let new_div = document.createElement("div");
+    new_div.setAttribute("id", "classification_term");
+    let son_div1 = document.createElement("div");
+    son_div1.setAttribute("id", "son_classification_term")
+    son_div1.innerHTML = " PLACE ";
+    let son_div2 = document.createElement("div");
+    son_div2.setAttribute("id", "son_classification_term")
+    son_div2.innerHTML = " NICKNAME ";
+    let son_div3 = document.createElement("div");
+    son_div3.setAttribute("id", "son_classification_term")
+    son_div3.innerHTML = " VICTORIES ";
+    let son_div4 = document.createElement("div");
+    son_div4.setAttribute("id", "son_classification_term")
+    son_div4.innerHTML = " GAMES ";
+
+    new_div.appendChild(son_div1)
+    new_div.appendChild(son_div2)
+    new_div.appendChild(son_div3)
+    new_div.appendChild(son_div4)
+    classifications.appendChild(new_div);
+    for(let i = 0; i < rankingsList.length; i++){
+        let individual_ranking = rankingsList[i];
+        let new_div = document.createElement("div");
+        new_div.setAttribute("id", "classification_term");
+        let son_div1 = document.createElement("div");
+        son_div1.setAttribute("id", "son_classification_term")
+        son_div1.innerHTML = (i + 1).toString() + ". ";
+        let son_div2 = document.createElement("div");
+        son_div2.setAttribute("id", "son_classification_term")
+        son_div2.innerHTML = individual_ranking.name;
+        let son_div3 = document.createElement("div");
+        son_div3.setAttribute("id", "son_classification_term")
+        son_div3.innerHTML = individual_ranking.victories;
+        let son_div4 = document.createElement("div");
+        son_div4.setAttribute("id", "son_classification_term")
+        son_div4.innerHTML = individual_ranking.games;
+        
+        new_div.appendChild(son_div1)
+        new_div.appendChild(son_div2)
+        new_div.appendChild(son_div3)
+        new_div.appendChild(son_div4)
+        classifications.appendChild(new_div);
+    }
+
+})
 
 server_rankings_button.addEventListener("click", function(){
-    let classifications = document.getElementById("classifications");
+    let classifications = document.getElementById("classifications_server");
     classifications.innerHTML = "";
 
     rankings_display = !rankings_display;

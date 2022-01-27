@@ -243,7 +243,7 @@ input[type="password"] {
   align-items: center;
 }
 
-#classifications {
+.classifications {
   display: none;
   text-align: center;
   border-style: dotted;

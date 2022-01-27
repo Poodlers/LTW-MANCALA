@@ -22,12 +22,38 @@ const headers = {
     }
 };
 
+let updateSSEResponses = [];
+
 http.createServer((request,response) => {
 
     switch(request.method) {
     case 'GET':
         if (request.headers.accept && request.headers.accept == 'text/event-stream'){
-            sendSSE(request, response);
+            let queryString = request.url.replace('/update?','');
+            const args = parseQuery(queryString);
+            const nick = args.nick;
+            const game_name = args.game;
+            console.log('request on ' + game_name + ' ' + nick);
+            
+            //start timeOut
+            response.writeHead(200, headers.sse);
+            response.write('\n');
+
+            let timeoutNotif =  setTimeout(() => {
+                let winner;
+                let game_obj = getGameObjFromFile(game_name);
+                if(game_obj.turn != undefined){
+                    winner = (game_obj.turn == game_obj.player1 ? game_obj.player2 : game_obj.player1);
+                }else{
+                    winner = null;
+                }
+                response.write('data: ' + JSON.stringify({"winner": winner}) + "\n\n");
+            }, 120000);
+            
+            updateSSEResponses.push({game_id: game_name , response_obj: response, timeout_obj: timeoutNotif});
+            
+            
+            checkIfHasOnGoingGame(game_name, response);
             
         }
         if(url.parse(request.url).pathname.includes('.') || url.parse(request.url).pathname == '/' )
@@ -42,6 +68,15 @@ http.createServer((request,response) => {
     }
 
 }).listen(conf.port);
+
+function checkIfHasOnGoingGame(game_id, response){
+    let game_obj = getGameObjFromFile(game_id);
+    if(!isEmpty(game_obj)){
+        let obj_to_send = prepareObjUpdate(game_obj);
+        response.write('data: ' + JSON.stringify(obj_to_send)+ "\n\n");
+    }
+
+}
 
 function parseQuery(queryString) {
     var query = {};
@@ -275,195 +310,154 @@ class MancalaHelper {
 }
 
 
-function sendSSE(request, response){
 
-    let queryString = request.url.replace('/update?','');
-    const args = parseQuery(queryString);
-    const nick = args.nick;
-    const game_name = args.game;
-    let board_prev = [];
-    let timeout = 0;
-    // find this ongoing game in ongoinggames.json
-    const updateStream = setInterval(() => {
-        const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
-        let ongoing_games = JSON.parse(fileData).ongoing_games;
 
-    for(let i = 0; i < ongoing_games.length; i++){
-        let game_id = Object.keys(ongoing_games[i])[0];
-        let game = ongoing_games[i][game_id];
-        if(game_id == game_name){
-            //this players game is ongoing and we need to send him something damnnn
-            let obj_to_send = {};
-           
-            if(game.board != undefined){
-                let game_board = game.board;
-                //game_board has not changed so increment the time
-                if(game_board == board_prev){
-                    console.log("timeout curr: ", timeout);
-                    timeout = timeout + 1;
-                }else{ //reset timeout
-                    board_prev = game_board;
-                    timeout = 0;
+function onWinFunction(game){
+    if(game.board != undefined){
+        //if game.board is not undefined this means it was a legit win and we need to update ranking
+        //if game.board is undefined, this game came to an end via a giveup, and we do not update our ranking here (updated in the leave func)
+        const rankingData = fs.readFileSync('ranking.json', 'utf-8');
+        let ranking = JSON.parse(rankingData).ranking;
+        console.log("we have winner yay")
+        if(game.winner == null){ //case of tie, increase them both games played
+            let ranking_entry_player1 = ranking.find(element => element.nick == game.player1);
+            let ranking_entry_player2 = ranking.find(element => element.nick == game.player2);
+            if(ranking_entry_player1 != undefined){
+                ranking_entry_player1["games"] = ranking_entry_player1["games"] + 1;
+            }
+            else{
+                ranking_entry_player1 = {"nick": game.player1, "victories": 0, "games": 1};
+            }
+
+            if(ranking_entry_player2 != undefined){
+                ranking_entry_player2["games"] = ranking_entry_player2["games"] + 1;
+            }
+            else{
+                ranking_entry_player2 = {"nick": game.player2, "victories": 0, "games": 1};
+            }
+            let filtered_ranking = ranking.filter(e => (e.nick != game.player1 && e.nick != game.player2) );
+
+            filtered_ranking.push(ranking_entry_player1);
+            filtered_ranking.push(ranking_entry_player2);
+
+            const newRankingData = {ranking: filtered_ranking};
+            fs.writeFile('ranking.json', JSON.stringify(newRankingData), (err) => {
+                if (err) {
+                    throw err;
                 }
-                //two minutes have passed
-                if(timeout == 120){
-                    console.log("timeout");
-                    //set our winner
-                    game.winner = (game.turn == game.player1 ? game.player2 : game.player1);
+                console.log("JSON Ranking data is saved.");
+            });
 
+        }else{
+            let non_winner = (game.winner == game.player1 ? game.player2 : game.player1);
+            //update ranking.json
+            //update the ranking.json
+            
+            //remove from the ranking array the entries we are about to modify
+            let filtered_ranking = ranking.filter(e => (e.nick != game.winner && e.nick != non_winner) );
+            let ranking_entry_nonwinner = ranking.find(element => element.nick == non_winner);
+            let ranking_entry_winner = ranking.find(element => element.nick == game.winner);
 
-                }
-
-                //set up our MancalaHelper
-                let Mancala_Assist = new MancalaHelper();
-                Mancala_Assist.setUp(game_board);
-                let player1_pits = Mancala_Assist.getPlayer1Pits();
-                let player1_store = Mancala_Assist.getPlayer1Store();
-                let player2_store = Mancala_Assist.getPlayer2Store();
-                let player2_pits = Mancala_Assist.getPlayer2Pits();
-                obj_to_send["board"] = {};
-                obj_to_send["board"]["sides"] = {};
-                obj_to_send["stores"] = {};
-                obj_to_send["stores"][game.player1] = player1_store;
-                obj_to_send["stores"][game.player2] = player2_store;
-                obj_to_send["board"]["sides"][game.player1] = {
-                    "store": player1_store,
-                    "pits": player1_pits
-                }
-                obj_to_send["board"]["sides"][game.player2] = {
-                    "store": player2_store,
-                    "pits": player2_pits
-                }
-
-                obj_to_send["board"]["turn"] = game.turn;
-                if(game.pit != null) obj_to_send["pit"] = game.pit;
+            if(ranking_entry_nonwinner != undefined){
+                ranking_entry_nonwinner["games"] = ranking_entry_nonwinner["games"] + 1;
+            }else{
+                ranking_entry_nonwinner = {"nick": non_winner, "victories": 0, "games": 1};
+            }
+            if(ranking_entry_winner != undefined){
+                ranking_entry_winner["victories"] = ranking_entry_winner["victories"] + 1;
+                ranking_entry_winner["games"] = ranking_entry_winner["games"] + 1;
+            }
+            else{
+                ranking_entry_winner = {"nick": game.winner, "victories": 1, "games": 1};
             }
         
-            if(game.winner != 0){
-                obj_to_send["winner"] = game.winner;
-                console.log(obj_to_send);
-                if(game.board != undefined){
-                    //if game.board is not undefined this means it was a legit win and we need to update ranking
-                    //if game.board is undefined, this game came to an end via a giveup, and we do not update our ranking here
-                    const rankingData = fs.readFileSync('ranking.json', 'utf-8');
-                    let ranking = JSON.parse(rankingData).ranking;
-                    console.log("we have winner yay")
-                    if(game.winner == null){ //case of tie, increase them both games played
-                        let ranking_entry_player1 = ranking.find(element => element.nick == game.player1);
-                        let ranking_entry_player2 = ranking.find(element => element.nick == game.player2);
-                        if(ranking_entry_player1 != undefined){
-                            ranking_entry_player1["games"] = ranking_entry_player1["games"] + 1;
-                        }
-                        else{
-                            ranking_entry_player1 = {"nick": game.player1, "victories": 0, "games": 1};
-                        }
+            filtered_ranking.push(ranking_entry_nonwinner);
+            filtered_ranking.push(ranking_entry_winner);
 
-                        if(ranking_entry_player2 != undefined){
-                            ranking_entry_player2["games"] = ranking_entry_player2["games"] + 1;
-                        }
-                        else{
-                            ranking_entry_player2 = {"nick": game.player2, "victories": 0, "games": 1};
-                        }
-                        let filtered_ranking = ranking.filter(e => (e.nick != game.player1 && e.nick != game.player2) );
-
-                        filtered_ranking.push(ranking_entry_player1);
-                        filtered_ranking.push(ranking_entry_player2);
-
-                        const newRankingData = {ranking: filtered_ranking};
-                        fs.writeFile('ranking.json', JSON.stringify(newRankingData), (err) => {
-                            if (err) {
-                                throw err;
-                            }
-                            console.log("JSON Ranking data is saved.");
-                        });
-
-                    }else{
-                        let non_winner = (game.winner == game.player1 ? game.player2 : game.player1);
-                        //update ranking.json
-                        //update the ranking.json
-                        
-                        //remove from the ranking array the entries we are about to modify
-                        let filtered_ranking = ranking.filter(e => (e.nick != game.winner && e.nick != non_winner) );
-                        let ranking_entry_nonwinner = ranking.find(element => element.nick == non_winner);
-                        let ranking_entry_winner = ranking.find(element => element.nick == game.winner);
-
-                        if(ranking_entry_nonwinner != undefined){
-                            ranking_entry_nonwinner["games"] = ranking_entry_nonwinner["games"] + 1;
-                        }else{
-                            ranking_entry_nonwinner = {"nick": non_winner, "victories": 0, "games": 1};
-                        }
-                        if(ranking_entry_winner != undefined){
-                            ranking_entry_winner["victories"] = ranking_entry_winner["victories"] + 1;
-                            ranking_entry_winner["games"] = ranking_entry_winner["games"] + 1;
-                        }
-                        else{
-                            ranking_entry_winner = {"nick": game.winner, "victories": 1, "games": 1};
-                        }
-                    
-                        filtered_ranking.push(ranking_entry_nonwinner);
-                        filtered_ranking.push(ranking_entry_winner);
-
-                        const newRankingData = {ranking: filtered_ranking};
-                        fs.writeFile('ranking.json', JSON.stringify(newRankingData), (err) => {
-                            if (err) {
-                                throw err;
-                            }
-                            console.log("JSON Ranking data is saved.");
-                        });
-                    }
+            const newRankingData = {ranking: filtered_ranking};
+            fs.writeFile('ranking.json', JSON.stringify(newRankingData), (err) => {
+                if (err) {
+                    throw err;
                 }
-
-                //ranking updated, now delete this game from the ongoing_games
-
-                ongoing_games.splice(i,1);
-                console.log(ongoing_games);
-                const newOngoingData = {ongoing_games: ongoing_games};
-                fs.writeFile('ongoinggames.json', JSON.stringify(newOngoingData), (err) => {
-                    if (err) {
-                        throw err;
-                    }
-                    console.log("JSON OnGoing data is saved.");
-                });
-
-            }
-
-
-            response.writeHead(200, headers.sse);
-            response.write('\n');
-            response.write('data: ' + JSON.stringify(obj_to_send) + "\n\n");
-            
-            return;
+                console.log("JSON Ranking data is saved.");
+            });
         }
     }
 
-    //no games ongoing yet, check if the player is in QUEUE
-   
+}
+
+function prepareObjUpdate(game){
+    let obj_to_send = {};
+    let game_board = game.board;
+
+    if(game.board != undefined){
+            //set up our MancalaHelper
+            let Mancala_Assist = new MancalaHelper();
+            Mancala_Assist.setUp(game_board);
+            let player1_pits = Mancala_Assist.getPlayer1Pits();
+            let player1_store = Mancala_Assist.getPlayer1Store();
+            let player2_store = Mancala_Assist.getPlayer2Store();
+            let player2_pits = Mancala_Assist.getPlayer2Pits();
+            obj_to_send["board"] = {};
+            obj_to_send["board"]["sides"] = {};
+            obj_to_send["stores"] = {};
+            obj_to_send["stores"][game.player1] = player1_store;
+            obj_to_send["stores"][game.player2] = player2_store;
+            obj_to_send["board"]["sides"][game.player1] = {
+                "store": player1_store,
+                "pits": player1_pits
+            }
+            obj_to_send["board"]["sides"][game.player2] = {
+                "store": player2_store,
+                "pits": player2_pits
+            }
+
+            obj_to_send["board"]["turn"] = game.turn;
+            if(game.pit != null) obj_to_send["pit"] = game.pit;
+        }
+    
+        if(game.winner != 0){
+            obj_to_send["winner"] = game.winner;
+        }
+        console.log(obj_to_send);
+        return obj_to_send;
+
+
+}
+
+function getGameObjFromFile(game_name){
+    // find this ongoing game in ongoinggames.json
+    const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
+    let ongoing_games = JSON.parse(fileData).ongoing_games;
+    for(let i = 0; i < ongoing_games.length; i++){
+        let game_id = Object.keys(ongoing_games[i])[0];
+    
+        if(game_id == game_name){
+            return ongoing_games[i][game_id];
+            
+        }
+    }
+
+    return {};
+}
+
+function getGameObjFromQueueFile(game_name){
     const fileQueueData = fs.readFileSync('join.json', 'utf-8');
     let queue_games = JSON.parse(fileQueueData).queue_games;
 
     for(let i = 0; i < queue_games.length; i++){
         let game_id = Object.keys(queue_games[i])[0];
         if(game_id == game_name){
-            response.writeHead(200, headers.sse);
-            response.write('\n');
-            response.write('data: ' + JSON.stringify({}) + "\n\n");
-            
-            return;
+            return queue_games[i][game_id];
         }
     }
-
-    //if there's no queue game for this, this means that the player has given up before someone else joined so return this
-    response.writeHead(200, headers.sse);
-    response.write('\n');
-    response.write('data: ' + JSON.stringify({"winner": null}) + "\n\n");
-    console.log("clearing the stream it dead");
-    clearInterval(updateStream);
-
-    }, 500);
-    
-    
-    
+    return {};
 }
+
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
 
 function doGetRequest(request,response) {
     const pathname = getPathname(request);
@@ -560,6 +554,8 @@ function leaveFunc(parsedArgs, response){
     const password = args.password;
     const game = args.game;
 
+    let updateSSEResponseObjs = updateSSEResponses.filter(element => element.game_id == game);
+
     const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
     let ongoing_games = JSON.parse(fileData).ongoing_games;
     for(let i = 0; i < ongoing_games.length; i++){
@@ -571,7 +567,7 @@ function leaveFunc(parsedArgs, response){
             let winner = (temp_game.player1 == nick ? temp_game.player2 : temp_game.player1)
             new_game[game_id]["winner"] = winner
             ongoing_games.splice(i,1);
-            ongoing_games.push(new_game);
+          
             const newOngoingData = {ongoing_games: ongoing_games};
             fs.writeFile('ongoinggames.json', JSON.stringify(newOngoingData), (err) => {
                 if (err) {
@@ -615,6 +611,16 @@ function leaveFunc(parsedArgs, response){
 
             response.writeHead(200, headers.plain);
             response.end(JSON.stringify({})); 
+
+            for(let b = 0; b < updateSSEResponseObjs.length; b++){
+                let updateSSEResponse = updateSSEResponseObjs[b].response_obj;
+                let updateSSETimeout = updateSSEResponseObjs[b].timeout_obj;
+                clearTimeout(updateSSETimeout);
+                updateSSEResponse.write('data: ' + JSON.stringify({winner: winner}) + "\n\n");
+            }
+            //delete the updateSSE object from the global array
+            updateSSEResponses = updateSSEResponses.filter(element => element.game_id != game);
+
             return;
         }
 
@@ -634,6 +640,17 @@ function leaveFunc(parsedArgs, response){
                 }
                 console.log("JSON Queue data is saved.");
             }); 
+
+            for(let b = 0; b < updateSSEResponseObjs.length; b++){
+                let updateSSEResponse = updateSSEResponseObjs[b].response_obj;
+                let updateSSETimeout = updateSSEResponseObjs[b].timeout_obj;
+                clearTimeout(updateSSETimeout);
+                updateSSEResponse.write('data: ' + JSON.stringify({winner: winner}) + "\n\n");
+
+            }
+
+            //delete the updateSSE object from the global array
+            updateSSEResponses = updateSSEResponses.filter(element => element.game_id != game);
             response.writeHead(200, headers.plain);
             response.end(JSON.stringify({}));
             return;
@@ -706,67 +723,124 @@ function notifyFunc(parsedArgs, response){
     const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
     let ongoing_games = JSON.parse(fileData).ongoing_games;
 
-    for(let i = 0; i < ongoing_games.length; i++){
-        let game_id = Object.keys(ongoing_games[i])[0];
-        if(game_id == game){
-            let game_temp = ongoing_games[i][game_id];
-            if(game_temp.turn != nick){
-                response.writeHead(401, headers.plain);
-                response.end(JSON.stringify({"error" : "Not your turn to play" }));
-                return;
-            }
-            let board = game_temp.board;
-            let Mancala_Assist = new MancalaHelper();
-            Mancala_Assist.setUp(board);
-            Mancala_Assist.setUpPlayers(game_temp.player1, game_temp.player2, game_temp.turn);
-            let next_turn = Mancala_Assist.sow_board(move);
-            if(next_turn == -1){
-                response.writeHead(401, headers.plain);
-                response.end(JSON.stringify({"error" : "Can't sow an empty cavity" }));
-                return;
-            }
+    let game_temp = getGameObjFromFile(game);
+    if(isEmpty(game_temp)){
+        response.writeHead(400, headers.plain);
+        response.end(JSON.stringify({"error": "No game with id" + game}));
+        return;
+    }
+    
+    if(game_temp.turn != nick){
+            response.writeHead(401, headers.plain);
+            response.end(JSON.stringify({"error" : "Not your turn to play" }));
+            return;
+        }
+    let board = game_temp.board;
+    let Mancala_Assist = new MancalaHelper();
+    Mancala_Assist.setUp(board);
+    Mancala_Assist.setUpPlayers(game_temp.player1, game_temp.player2, game_temp.turn);
+    let next_turn = Mancala_Assist.sow_board(move);
+    if(next_turn == -1){
+        response.writeHead(401, headers.plain);
+        response.end(JSON.stringify({"error" : "Can't sow an empty cavity" }));
+        return;
+    }
 
-            let new_board = Mancala_Assist.getBoard();
-            let new_game_obj = {};
-            if(Mancala_Assist.checkGameEnd()){
-                new_board = Mancala_Assist.getBoard();
-                new_game_obj[game_id] = {player1: game_temp.player1, player2: game_temp.player2,
-                    board: new_board, turn: next_turn, pit: move, winner: Mancala_Assist.getWinner()
-                }
-            }
-            else{
-                new_game_obj[game_id] = {player1: game_temp.player1, player2: game_temp.player2,
-                            board: new_board, turn: next_turn, pit: move, winner: 0
-                }
-                
-            
-            }
-            //rewrite ongoinggames.json
+    let new_board = Mancala_Assist.getBoard();
+    let new_game_obj = {};
+    if(Mancala_Assist.checkGameEnd()){
+        new_board = Mancala_Assist.getBoard();
+        new_game_obj[game] = {player1: game_temp.player1, player2: game_temp.player2,
+            board: new_board, turn: next_turn, pit: move, winner: Mancala_Assist.getWinner()
+        }
+    }
+    else{
+        new_game_obj[game] = {player1: game_temp.player1, player2: game_temp.player2,
+                    board: new_board, turn: next_turn, pit: move, winner: 0
+        }
+        
+    
+    }
+    //rewrite ongoinggames.json
+    for(let i = 0; i < ongoing_games.length; i++){
+        if(Object.keys(ongoing_games[i])[0] == game){
             ongoing_games.splice(i,1);
             ongoing_games.push(new_game_obj);
-
             const newOnGoingFileContent = {ongoing_games: ongoing_games};
             fs.writeFile('ongoinggames.json', JSON.stringify(newOnGoingFileContent), (err) => {
             if (err) {
                 throw err;
             }
             console.log("JSON OnGoingGames data is saved.");
-             }); 
-
-            response.writeHead(200, headers.plain);
-            response.end(JSON.stringify({}));
-            return;
-           
-
+                }); 
+            break;
         }
-        
-        
-
     }
+    
+        
+    //send SSEUpdate omg omg
+    let updateSSEResponseObjs = updateSSEResponses.filter(element => element.game_id == game);
+        
+        for(let c = 0; c < updateSSEResponseObjs.length; c++){
+            let SSEResponseObject = updateSSEResponseObjs[c];
+                let updateSSEResponse = SSEResponseObject.response_obj;
+                let SSETimeOut = SSEResponseObject.timeout_obj;
 
-    response.writeHead(400, headers.plain);
-    response.end(JSON.stringify({"error": "No game with id" + game}));
-}
+                clearTimeout(SSETimeOut)
+                SSETimeOut = setTimeout(() => {
+                    let winner;
+                    console.log("TIMEOUT");
+                    //maybe need to read from ongoinggames.json
+                    let game_object = new_game_obj[game];
+                    if(game_object.turn != undefined){
+                        winner = (game_object.turn == game_object.player1 ? game_object.player2 : game_object.player1);
+                    }else{
+                        winner = null;
+                    }
+                    SSEResponse.write('data: ' + JSON.stringify({"winner": winner}) + "\n\n");
+                }, 120000);
+
+                SSEResponseObject.timeout_obj = SSETimeOut;
+                let obj_to_send = prepareObjUpdate(new_game_obj[game]);
+                updateSSEResponse.write('data: ' + JSON.stringify(obj_to_send) + "\n\n");
+            
+                
+        }
+
+        if(new_game_obj[game].winner != 0){
+            //game end - delete this bitch from the file
+            //rewrite ongoinggames.json
+            for(let i = 0; i < ongoing_games.length; i++){
+                if(Object.keys(ongoing_games[i])[0] == game){
+                        ongoing_games.splice(i,1);
+                        
+                        const newOnGoingFileContent = {ongoing_games: ongoing_games};
+                        fs.writeFile('ongoinggames.json', JSON.stringify(newOnGoingFileContent), (err) => {
+                        if (err) {
+                            throw err;
+                        }
+                        console.log("JSON OnGoingGames data is saved.");
+                            }); 
+                        break;
+                }
+            }
+
+            for(let b = 0; b < updateSSEResponseObjs.length; b++){
+                let updateSSETimeout = updateSSEResponseObjs[b].timeout_obj;
+                clearTimeout(updateSSETimeout);
+            }
+            updateSSEResponses = updateSSEResponses.filter(element => element.game_id != game);
+            
+        }
+
+        response.writeHead(200, headers.plain);
+        response.end(JSON.stringify({}));
+        return;
+           
+            
+ }
+        
+
 
 function hasGameFunc(parsedArgs, response){
     const args = JSON.parse(Object.keys(parsedArgs)[0]);
@@ -781,7 +855,7 @@ function hasGameFunc(parsedArgs, response){
             response.writeHead(200, headers.plain);
             response.end(JSON.stringify({game: game_id, size: (ongoing_game_temp[game_id].board.length - 2) / 2 }));
 
-            //also send an update here if u figure out how xD
+            
 
             return;
         }
@@ -833,6 +907,8 @@ function joinFunc(parsedArgs, response){
             if(games[i][gameId].nick == nick && games[i][gameId].password == password){
                 response.writeHead(200, headers.plain);
                 response.end(JSON.stringify({"game" : gameId }));
+                
+
             }else{
                 console.log("Matching these players!");
                 //match these bros and delete this entry from join.json
@@ -852,6 +928,7 @@ function joinFunc(parsedArgs, response){
                 games_array.push(newGame);
                 console.log(games_array);
                 const newOngoingFileContent = {ongoing_games: games_array};
+                ongoing_array = games_array;
                 fs.writeFile('ongoinggames.json', JSON.stringify(newOngoingFileContent), (err) => {
                     if (err) {
                         throw err;
@@ -870,11 +947,20 @@ function joinFunc(parsedArgs, response){
                 }); 
                 response.writeHead(200, headers.plain);
                 response.end(JSON.stringify({"game" : gameId }));
+
+                let updateSSEObjs = updateSSEResponses.filter(element => element.game_id == gameId);
+                for(let c = 0; c < updateSSEObjs.length; c++){
+                    let updateSSEResponse = updateSSEObjs[c].response_obj;
+                    let obj_to_send = prepareObjUpdate(newGame[gameId]);
+                    updateSSEResponse.write('data: ' + JSON.stringify(obj_to_send) + "\n\n");
+                }
+                
+                
             }
         
             return;
         }
-}
+    }
 
     //if we got here its because no existing games exist and we put the user in queue
     let newQueueGame = {};
