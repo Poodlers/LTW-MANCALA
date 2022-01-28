@@ -555,6 +555,9 @@ function leaveFunc(parsedArgs, response){
     const game = args.game;
 
     let updateSSEResponseObjs = updateSSEResponses.filter(element => element.game_id == game);
+    if(updateSSEResponseObjs.length == 0){
+        return;
+    }
 
     const fileData = fs.readFileSync('ongoinggames.json', 'utf-8');
     let ongoing_games = JSON.parse(fileData).ongoing_games;
